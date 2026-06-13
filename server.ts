@@ -60,14 +60,18 @@ async function initializeFirebaseAdmin() {
 }
 
 const app = express();
+app.set("trust proxy", true);
+app.disable("x-powered-by");
 const PORT = 3000;
 
-app.use(express.json({ limit: "50mb" }));
+app.use(express.json({ limit: "10mb" }));
 
 app.use((_req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*; connect-src 'self' https://*;");
   next();
 });
 
@@ -130,8 +134,7 @@ app.post("/api/scan-receipt", async (req, res) => {
     return res.json(result);
   } catch (error: unknown) {
     console.error("Gemini Scan Error:", error);
-    const message = error instanceof Error ? error.message : String(error);
-    res.status(500).json({ error: "Failed to scan receipt carbon footprint", details: message });
+    res.status(500).json({ error: "Failed to scan receipt carbon footprint" });
   }
 });
 
@@ -146,8 +149,7 @@ app.post("/api/chat", async (req, res) => {
     return res.json(result);
   } catch (error: unknown) {
     console.error("Gemini Chat Error:", error);
-    const message = error instanceof Error ? error.message : String(error);
-    res.status(500).json({ error: "Failed to communicate with AI Coach", details: message });
+    res.status(500).json({ error: "Failed to communicate with AI Coach" });
   }
 });
 
