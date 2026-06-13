@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import { ReceiptItem, Message, AnalysisResult } from "../types";
 
 dotenv.config();
 
@@ -21,7 +22,7 @@ export function getGeminiClient() {
 }
 
 // High-fidelity static sample calculation database
-export const sampleData: Record<string, { items: any[]; totalCo2: number; explanation: string }> = {
+export const sampleData: Record<string, { items: ReceiptItem[]; totalCo2: number; explanation: string }> = {
   "bengaluru-cafe": {
     items: [
       { id: "1", name: "Sourdough Bread Toast", co2: 0.4, quantity: "2 slices", category: "Bakery", ecoRating: "A", alternative: "None needed (Already optimal)" },
@@ -89,14 +90,14 @@ export async function processReceiptScan({ imageBase64, mimeType, sampleId, rawT
     } else if (safeText && safeText.toLowerCase().includes("pune")) {
       matchedData = sampleData["pune-dairy"];
     } else if (safeText) {
-      const items = safeText.split("\n")
+      const items: ReceiptItem[] = safeText.split("\n")
         .filter((line: string) => line.trim().length > 3)
         .slice(0, 5)
         .map((line: string, index: number) => {
           const hasDairy = /milk|paneer|butter|cheese|ghee|curd|yogurt/i.test(line);
           const hasMeat = /chicken|meat|fish|egg|mutton/i.test(line);
           const co2 = hasDairy ? 1.5 : (hasMeat ? 3.5 : 0.3);
-          const ecoRating = hasMeat ? "D" : (hasDairy ? "C" : "A");
+          const ecoRating = (hasMeat ? "D" : (hasDairy ? "C" : "A")) as "A" | "B" | "C" | "D" | "E";
           const category = hasMeat ? "Meat" : (hasDairy ? "Dairy" : "Produce");
           const cleanName = line.replace(/[^a-zA-Z\s]/g, "").trim();
           return {
@@ -110,7 +111,7 @@ export async function processReceiptScan({ imageBase64, mimeType, sampleId, rawT
           };
         });
 
-      const totalCo2 = items.reduce((sum: number, item: any) => sum + item.co2, 0);
+      const totalCo2 = items.reduce((sum: number, item: ReceiptItem) => sum + item.co2, 0);
       matchedData = {
         items,
         totalCo2: parseFloat(totalCo2.toFixed(1)),
@@ -151,7 +152,7 @@ Return an accurate, structured JSON object representation matching this format e
   "explanation": "Expert description of why this footprint stands out, Indian agricultural factors, and carbon saving targets."
 }`;
 
-  let contents: any;
+  let contents: string | { parts: ({ inlineData: { data: string; mimeType: string } } | { text: string })[] };
   if (imageBase64 && mimeType) {
     const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
     contents = {
@@ -201,18 +202,18 @@ Return an accurate, structured JSON object representation matching this format e
     }
   });
 
-  const parsedResponse = JSON.parse(response.text || "{}");
+  const parsedResponse = JSON.parse(response.text || "{}") as Partial<AnalysisResult>;
   if (parsedResponse.items && Array.isArray(parsedResponse.items)) {
-    parsedResponse.items = parsedResponse.items.map((it: any, index: number) => ({
+    parsedResponse.items = parsedResponse.items.map((it, index: number) => ({
       ...it,
       id: String(index + 1)
-    }));
+    })) as ReceiptItem[];
   }
 
   return parsedResponse;
 }
 
-export async function processChat({ messages, scanHistory }: { messages: any[]; scanHistory?: any[] }) {
+export async function processChat({ messages, scanHistory }: { messages: Message[]; scanHistory?: ReceiptItem[] }) {
   if (!messages || !Array.isArray(messages)) {
     throw new Error("Messages array is required");
   }
@@ -297,7 +298,7 @@ Your active **Carbon Twin** can simulate these zero-cost measures right now in t
     return { text: reply };
   }
 
-  const chatContents = messages.map((m: any) => ({
+  const chatContents = messages.map((m) => ({
     role: m.role || "user",
     parts: [{ text: m.content }]
   }));

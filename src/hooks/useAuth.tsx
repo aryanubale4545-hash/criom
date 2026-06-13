@@ -110,8 +110,9 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
                 try {
                   setAuthError(null);
                   await signInWithGoogle();
-                } catch (err: any) {
-                  setAuthError(err.message || "Failed to authenticate with Google.");
+                } catch (err: unknown) {
+                  const message = err instanceof Error ? err.message : "Failed to authenticate with Google.";
+                  setAuthError(message);
                 }
               }}
               className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-black font-black text-sm rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] flex items-center justify-center gap-3 active:scale-[0.98]"

@@ -8,6 +8,7 @@ import {
   insertReceiptTelemetry, 
   getCityBenchmarks 
 } from "./src/services/bigqueryService";
+import { rateLimiter } from "./src/middleware/rateLimiter";
 
 dotenv.config();
 
@@ -17,8 +18,11 @@ async function initializeFirebaseAdmin() {
     let credential;
     if (process.env.USE_SECRET_MANAGER === "true") {
       try {
-        // @ts-ignore
-        const { SecretManagerServiceClient } = await import("@google-cloud/secret-manager");
+        const { SecretManagerServiceClient } = (await import("@google-cloud/secret-manager")) as {
+          SecretManagerServiceClient: new () => {
+            accessSecretVersion: (args: { name: string }) => Promise<[{ payload?: { data?: { toString: () => string } } }]>;
+          };
+        };
         const client = new SecretManagerServiceClient();
         const name = `projects/${process.env.GCP_PROJECT_ID}/secrets/FIREBASE_SERVICE_ACCOUNT_KEY/versions/latest`;
         const [version] = await client.accessSecretVersion({ name });
@@ -30,8 +34,9 @@ async function initializeFirebaseAdmin() {
           }
           credential = admin.credential.cert(sa);
         }
-      } catch (smErr: any) {
-        console.warn("Secret Manager authentication failed, trying local credentials:", smErr.message);
+      } catch (smErr: unknown) {
+        const message = smErr instanceof Error ? smErr.message : String(smErr);
+        console.warn("Secret Manager authentication failed, trying local credentials:", message);
       }
     }
 
@@ -67,31 +72,6 @@ app.use((req, res, next) => {
 });
 
 // Custom memory-based rate-limiter middleware to mitigate DoS / brute-force attacks
-const rateLimitWindow = 15 * 60 * 1000; // 15 minutes
-const rateLimitMax = 200; // max 200 requests per window
-const ipCache = new Map<string, { count: number; resetTime: number }>();
-
-function rateLimiter(req: express.Request, res: express.Response, next: express.NextFunction) {
-  if (process.env.NODE_ENV === "test") {
-    return next();
-  }
-  const ip = (req.headers["x-forwarded-for"] as string) || req.socket.remoteAddress || "unknown";
-  const now = Date.now();
-  const clientData = ipCache.get(ip);
-
-  if (!clientData || now > clientData.resetTime) {
-    ipCache.set(ip, { count: 1, resetTime: now + rateLimitWindow });
-    return next();
-  }
-
-  if (clientData.count >= rateLimitMax) {
-    return res.status(429).json({ error: "Too many requests. Please try again later." });
-  }
-
-  clientData.count++;
-  next();
-}
-
 app.use(rateLimiter);
 
 // API Route: Generate GCS Signed URL for receipt image upload
@@ -114,8 +94,9 @@ app.post("/api/get-signed-url", async (req, res) => {
 
     const gcsUrl = `gs://${bucket.name}/${filename}`;
     return res.json({ signedUrl, gcsUrl });
-  } catch (error: any) {
-    console.warn("GCS Signed URL Generation failed (using local mock upload fallback):", error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn("GCS Signed URL Generation failed (using local mock upload fallback):", message);
     const mockFilename = req.body.filename || "mock-receipt.jpg";
     return res.json({
       signedUrl: `http://localhost:${PORT}/api/mock-upload?file=${encodeURIComponent(mockFilename)}`,
@@ -147,9 +128,10 @@ app.post("/api/scan-receipt", async (req, res) => {
     }
 
     return res.json(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Gemini Scan Error:", error);
-    res.status(500).json({ error: "Failed to scan receipt carbon footprint", details: error.message });
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: "Failed to scan receipt carbon footprint", details: message });
   }
 });
 
@@ -162,9 +144,10 @@ app.post("/api/chat", async (req, res) => {
     }
     const result = await processChat({ messages, scanHistory });
     return res.json(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Gemini Chat Error:", error);
-    res.status(500).json({ error: "Failed to communicate with AI Coach", details: error.message });
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: "Failed to communicate with AI Coach", details: message });
   }
 });
 
@@ -173,7 +156,7 @@ app.get("/api/city-benchmarks", async (req, res) => {
   try {
     const benchmarks = await getCityBenchmarks();
     return res.json(benchmarks);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Get City Benchmarks Error:", error);
     res.status(500).json({ error: "Failed to retrieve city benchmarks" });
   }
@@ -194,8 +177,9 @@ async function configureBucketLifecycle() {
       }
     });
     console.log("Cloud Storage lifecycle cleanup configured (7 days retention).");
-  } catch (err: any) {
-    console.warn("Storage lifecycle configuration skipped (using fallback):", err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("Storage lifecycle configuration skipped (using fallback):", message);
   }
 }
 

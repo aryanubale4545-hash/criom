@@ -55,3 +55,14 @@ export const INITIAL_WEEKLY_MISSIONS = [
   { id: "m3", title: "Complete 3 low-carbon grocery trips", co2Saving: 1.8, monetarySaving: 60, status: "available", isCommit: false },
   { id: "m4", title: "Switch Basmati rice with Finger Millets", co2Saving: 1.2, monetarySaving: 30, status: "completed", isCommit: false }
 ];
+
+export const OFFLINE_FALLBACK_RESULT: AnalysisResult = {
+  items: [
+    { id: "fb-1", name: "Premium Raw Butter", co2: 2.4, quantity: "250g", category: "Dairy", ecoRating: "D", alternative: "Regional Cold-pressed Sunflower Spread (0.5kg CO₂)" },
+    { id: "fb-2", name: "Basmati Grains (Aged)", co2: 1.5, quantity: "1kg", category: "Grains", ecoRating: "B", alternative: "Local Organic finger Millets (0.3kg CO₂)" },
+    { id: "fb-3", name: "Toned Milk Curd Packet", co2: 1.0, quantity: "400g", category: "Dairy", ecoRating: "C", alternative: "Soy-fermented Yogurt Cup (0.2kg CO₂)" }
+  ],
+  totalCo2: 4.9,
+  explanation: "Automatic parse completed via local offline parameters. This grocery basket presents elevated dairy carbon coefficients. Swapping local pasture butter can save over 1.9kg directly."
+};
+

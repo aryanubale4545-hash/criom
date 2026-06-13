@@ -1,5 +1,5 @@
 import { BigQuery } from "@google-cloud/bigquery";
-import { ReceiptItem } from "../types";
+import { ReceiptItem, CityData } from "../types";
 
 const projectId = process.env.GCP_PROJECT_ID || "mock-project-id";
 
@@ -74,7 +74,7 @@ export async function insertReceiptTelemetry(items: ReceiptItem[], city: string)
   }
 }
 
-export async function getCityBenchmarks(): Promise<any[]> {
+export async function getCityBenchmarks(): Promise<CityData[]> {
   if (!bqClient) {
     return [
       { name: "Bengaluru", avgCo2: 4.25, rank: 1, trend: "improving", emissionLeader: "Koramangala Node", topSector: "Dairy" },

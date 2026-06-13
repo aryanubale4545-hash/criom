@@ -15,7 +15,8 @@ import {
   INITIAL_RECEIPTS_HISTORY,
   INITIAL_SCAN_RESULT,
   INITIAL_CITIES_DATA,
-  INITIAL_WEEKLY_MISSIONS
+  INITIAL_WEEKLY_MISSIONS,
+  OFFLINE_FALLBACK_RESULT
 } from "../utils/constants";
 
 export function useCarbonIQ() {
@@ -282,16 +283,7 @@ export function useCarbonIQ() {
  
     } catch (err) {
       console.warn("Scan API error, engaging high-fidelity local models:", err);
-      const matchedData: AnalysisResult = {
-        items: [
-          { id: "fb-1", name: "Premium Raw Butter", co2: 2.4, quantity: "250g", category: "Dairy", ecoRating: "D", alternative: "Regional Cold-pressed Sunflower Spread (0.5kg CO₂)" },
-          { id: "fb-2", name: "Basmati Grains (Aged)", co2: 1.5, quantity: "1kg", category: "Grains", ecoRating: "B", alternative: "Local Organic finger Millets (0.3kg CO₂)" },
-          { id: "fb-3", name: "Toned Milk Curd Packet", co2: 1.0, quantity: "400g", category: "Dairy", ecoRating: "C", alternative: "Soy-fermented Yogurt Cup (0.2kg CO₂)" }
-        ],
-        totalCo2: 4.9,
-        explanation: "Automatic parse completed via local offline parameters. This grocery basket presents elevated dairy carbon coefficients. Swapping local pasture butter can save over 1.9kg directly."
-      };
-      registerScanResults(matchedData);
+      registerScanResults(OFFLINE_FALLBACK_RESULT);
     } finally {
       setUploadProgress(null);
       setPipelineActive(false);
