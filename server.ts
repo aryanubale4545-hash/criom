@@ -24,7 +24,11 @@ async function initializeFirebaseAdmin() {
         const [version] = await client.accessSecretVersion({ name });
         const secretPayload = version.payload?.data?.toString();
         if (secretPayload) {
-          credential = admin.credential.cert(JSON.parse(secretPayload));
+          const sa = JSON.parse(secretPayload);
+          if (sa.private_key) {
+            sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+          }
+          credential = admin.credential.cert(sa);
         }
       } catch (smErr: any) {
         console.warn("Secret Manager authentication failed, trying local credentials:", smErr.message);
@@ -32,7 +36,11 @@ async function initializeFirebaseAdmin() {
     }
 
     if (!credential && process.env.FIREBASE_SERVICE_ACCOUNT_KEY_JSON) {
-      credential = admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY_JSON));
+      const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY_JSON);
+      if (sa.private_key) {
+        sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+      }
+      credential = admin.credential.cert(sa);
     }
 
     admin.initializeApp({
