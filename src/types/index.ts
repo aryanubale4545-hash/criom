@@ -1,3 +1,5 @@
+export type TabKey = "workspace" | "twin" | "coach" | "network" | "actions";
+
 export interface ReceiptItem {
   id: string;
   name: string;

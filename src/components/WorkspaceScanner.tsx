@@ -1,7 +1,9 @@
 import React from "react";
 import { motion } from "motion/react";
-import { Upload, RefreshCw, CheckCircle, Leaf, Terminal, Database, Scan } from "lucide-react";
+import { Upload, RefreshCw, CheckCircle, Leaf, Terminal } from "lucide-react";
 import { AnalysisResult } from "../types";
+import { ScannerPresets } from "./ScannerPresets";
+import { ScannerPipeline } from "./ScannerPipeline";
 
 interface WorkspaceScannerProps {
   uploadProgress: string | null;
@@ -19,7 +21,7 @@ interface WorkspaceScannerProps {
   selectedCityNode: string;
 }
 
-export function WorkspaceScanner({
+export const WorkspaceScanner = React.memo(function WorkspaceScanner({
   uploadProgress,
   dragActive,
   setDragActive,
@@ -138,26 +140,7 @@ export function WorkspaceScanner({
             <h3 className="text-xs font-mono font-black text-white uppercase tracking-wider block">Ingest preset datasets</h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-1 gap-2.5">
-            {[
-              { id: "bengaluru-cafe", name: "Bengaluru Café Receipt", label: "LATTE_STK", color: "bg-sky-950/40 text-[#3b82f6] border border-[#3b82f6]/20", desc: "500ml Milk curd, Paneer fat segments..." },
-              { id: "mumbai-mart", name: "Mumbai Grocery Mart", label: "GHEE_LOAD", color: "bg-amber-950/40 text-amber-500 border border-amber-500/20", desc: "Aged Basmati, Cow ghee portions, Honey..." },
-              { id: "pune-dairy", name: "Pune Household Dairy", label: "LACT_AVD", color: "bg-emerald-950/40 text-[#10b981] border border-emerald-500/20", desc: "Packet butter, Fermented yogurt..." }
-            ].map(p => (
-              <button 
-                key={p.id}
-                onClick={() => triggerSampleScan(p.id)}
-                className="p-2.5 bg-[#0c0d12] border border-zinc-800 hover:border-emerald-500/40 rounded text-left flex flex-col hover:text-emerald-400 transition-all group font-mono"
-                id={`demo-btn-${p.id.split('-')[0]}`}
-              >
-                <div className="flex justify-between items-center w-full mb-1">
-                  <span className="font-bold text-zinc-200 text-xs font-sans group-hover:text-emerald-400 transition-colors">{p.name}</span>
-                  <span className={`text-[8px] rounded px-1.5 py-[1px] ${p.color}`}>{p.label}</span>
-                </div>
-                <span className="text-[10px] text-zinc-500 truncate">{p.desc}</span>
-              </button>
-            ))}
-          </div>
+          <ScannerPresets triggerSampleScan={triggerSampleScan} />
 
           {receiptsHistory.length > 1 && (
             <div className="pt-3 border-t border-zinc-800 space-y-2">
@@ -183,38 +166,7 @@ export function WorkspaceScanner({
       </div>
 
       <div className="xl:col-span-7 flex flex-col gap-6" id="playground-results-stage">
-        {pipelineActive && (
-          <div className="bg-[#11131a] p-4 rounded-xl border border-dashed border-[#10b981]/50">
-            <span className="text-[10px] text-emerald-400 font-mono tracking-widest uppercase font-black block mb-3">SYSTEM REAL-TIME INTEGRATED CONDUIT (5-LAYER SYNC)</span>
-            <div className="grid grid-cols-5 gap-1.5 text-[9px] sm:text-xs">
-              <div className={`p-2 rounded border flex flex-col justify-between h-14 ${pipelineStep >= 1 ? "bg-emerald-950/20 border-[#10b981]/40 text-white" : "bg-[#0c0d12] border-zinc-900 text-zinc-650"}`}>
-                <span className="font-mono text-[8px] leading-tight text-zinc-500">L1</span>
-                <span className="font-bold text-[10px]">OCR SCAN</span>
-                <span className="font-mono text-[8px] mt-0.5">{pipelineStep > 1 ? "✓ COMPLETE" : "• RUNNING"}</span>
-              </div>
-              <div className={`p-2 rounded border flex flex-col justify-between h-14 ${pipelineStep >= 2 ? "bg-emerald-950/20 border-[#10b981]/40 text-white" : "bg-[#0c0d12] border-zinc-900 text-zinc-650"}`}>
-                <span className="font-mono text-[8px] leading-tight text-zinc-500">L2</span>
-                <span className="font-bold text-[10px]">CARBON MAP</span>
-                <span className="font-mono text-[8px] mt-0.5">{pipelineStep > 2 ? "✓ INDEXED" : pipelineStep === 2 ? "• ACTIVE" : "• WAIT"}</span>
-              </div>
-              <div className={`p-2 rounded border flex flex-col justify-between h-14 ${pipelineStep >= 3 ? "bg-emerald-950/20 border-[#10b981]/40 text-white" : "bg-[#0c0d12] border-zinc-900 text-zinc-650"}`}>
-                <span className="font-mono text-[8px] leading-tight text-zinc-500">L3</span>
-                <span className="font-bold text-[10px]">TWIN RESYNC</span>
-                <span className="font-mono text-[8px] mt-0.5">{pipelineStep > 3 ? "✓ PROJECTED" : pipelineStep === 3 ? "• ACTIVE" : "• WAIT"}</span>
-              </div>
-              <div className={`p-2 rounded border flex flex-col justify-between h-14 ${pipelineStep >= 4 ? "bg-emerald-950/20 border-[#10b981]/40 text-white" : "bg-[#0c0d12] border-zinc-900 text-zinc-650"}`}>
-                <span className="font-mono text-[8px] leading-tight text-zinc-500">L4</span>
-                <span className="font-bold text-[10px]">METRO GRID</span>
-                <span className="font-mono text-[8px] mt-0.5">{pipelineStep > 4 ? "✓ REGISTERED" : pipelineStep === 4 ? "• ACTIVE" : "• WAIT"}</span>
-              </div>
-              <div className={`p-2 rounded border flex flex-col justify-between h-14 ${pipelineStep >= 5 ? "bg-emerald-950/20 border-[#10b981]/40 text-white" : "bg-[#0c0d12] border-zinc-900 text-zinc-650"}`}>
-                <span className="font-mono text-[8px] leading-tight text-zinc-500">L5</span>
-                <span className="font-bold text-[10px]">ADVICE HYDR</span>
-                <span className="font-mono text-[8px] mt-0.5">{pipelineStep === 5 ? "• RUNNING" : "• WAIT"}</span>
-              </div>
-            </div>
-          </div>
-        )}
+        <ScannerPipeline pipelineActive={pipelineActive} pipelineStep={pipelineStep} />
 
         <div className="bg-[#11131a] rounded-xl border border-[#1e2230] overflow-hidden flex-1 flex flex-col justify-between" id="carbon-audit-ledger-frame">
           <div className="px-5 py-3 border-b border-[#1e2230] flex items-center justify-between bg-[#131620]">
@@ -289,7 +241,7 @@ export function WorkspaceScanner({
             </div>
 
             <div className="border-t border-[#1e2230] pt-5 flex flex-col md:flex-row items-stretch justify-between gap-5">
-              <div className="bg-[#0c0d12] p-3.5 rounded-lg border border-zinc-850 flex-1 flex flex-col justify-center">
+              <div className="bg-[#0c0d12] p-3.5 rounded-lg border border-zinc-855 flex-1 flex flex-col justify-center">
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <Terminal className="h-4 w-4 text-[#3b82f6]" />
                   <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider font-bold">Lifecycle Analyzer Output</span>
@@ -308,4 +260,4 @@ export function WorkspaceScanner({
       </div>
     </motion.div>
   );
-}
+});

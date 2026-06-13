@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
-import { ReceiptItem, AnalysisResult, Message, CityData } from "../types";
+import { useState, useEffect, useCallback } from "react";
+import { ReceiptItem, AnalysisResult, Message, CityData, TabKey } from "../types";
 import { useAuth } from "./useAuth";
+import { useTwinConfig } from "./useTwinConfig";
+import { useAICoach } from "./useAICoach";
 import { db } from "../services/firebase";
 import { 
   doc, 
@@ -12,7 +14,6 @@ import {
 import {
   INITIAL_RECEIPTS_HISTORY,
   INITIAL_SCAN_RESULT,
-  INITIAL_MESSAGES,
   INITIAL_CITIES_DATA,
   INITIAL_WEEKLY_MISSIONS
 } from "../utils/constants";
@@ -20,7 +21,7 @@ import {
 export function useCarbonIQ() {
   const { user } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<"workspace" | "twin" | "coach" | "network" | "actions" >("workspace");
+  const [activeTab, setActiveTab] = useState<TabKey>("workspace");
   const [selectedCityNode, setSelectedCityNode] = useState<string>("Bengaluru");
   const [streakCount, setStreakCount] = useState<number>(5);
   const [userXP, setUserXP] = useState<number>(340);
@@ -37,16 +38,28 @@ export function useCarbonIQ() {
   const [pipelineStep, setPipelineStep] = useState<number>(0);
   const [pipelineActive, setPipelineActive] = useState<boolean>(false);
 
-  const [dairyReductionPercent, setDairyReductionPercent] = useState<number>(20);
-  const [altAdoptionPercent, setAltAdoptionPercent] = useState<number>(30);
-  const [energyTransitionActive, setEnergyTransitionActive] = useState<boolean>(false);
-
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
-  const [chatInput, setChatInput] = useState<string>("");
-  const [isChatTyping, setIsChatTyping] = useState<boolean>(false);
-
   const [citiesData, setCitiesData] = useState<CityData[]>(INITIAL_CITIES_DATA);
   const [weeklyMissions, setWeeklyMissions] = useState(INITIAL_WEEKLY_MISSIONS);
+
+  // Integrate sub-hooks
+  const {
+    dairyReductionPercent,
+    setDairyReductionPercent,
+    altAdoptionPercent,
+    setAltAdoptionPercent,
+    energyTransitionActive,
+    setEnergyTransitionActive
+  } = useTwinConfig(user);
+
+  const {
+    messages,
+    setMessages,
+    chatInput,
+    setChatInput,
+    isChatTyping,
+    sendChatMessage,
+    saveMessages
+  } = useAICoach(user, scanResult.items);
 
   // 1. Fetch data from Firestore on mount/user change
   useEffect(() => {
@@ -73,7 +86,7 @@ export function useCarbonIQ() {
           });
         }
 
-        // Fetch Twin config
+        // Fetch Twin config (initial loader only)
         const twinSnap = await getDoc(doc(db, "users", user.uid, "configs", "twin"));
         if (twinSnap.exists()) {
           const data = twinSnap.data();
@@ -89,7 +102,6 @@ export function useCarbonIQ() {
           fetchedReceipts.push(d.data() as AnalysisResult);
         });
         if (fetchedReceipts.length > 0) {
-          // Sort or set history
           setReceiptsHistory(fetchedReceipts);
         }
 
@@ -105,26 +117,9 @@ export function useCarbonIQ() {
     };
 
     fetchFirestoreData();
-  }, [user]);
+  }, [user, setDairyReductionPercent, setAltAdoptionPercent, setEnergyTransitionActive, setMessages]);
 
-  // 2. Auto-save twin config changes
-  useEffect(() => {
-    if (!user) return;
-    const saveTwin = async () => {
-      try {
-        await setDoc(doc(db, "users", user.uid, "configs", "twin"), {
-          dairyReductionPercent,
-          altAdoptionPercent,
-          energyTransitionActive
-        });
-      } catch (err) {
-        console.error("Error auto-saving twin configuration:", err);
-      }
-    };
-    saveTwin();
-  }, [user, dairyReductionPercent, altAdoptionPercent, energyTransitionActive]);
-
-  const saveProfile = async (newStreak: number, newXP: number, newSaved: number, newCity: string) => {
+  const saveProfile = useCallback(async (newStreak: number, newXP: number, newSaved: number, newCity: string) => {
     if (!user) return;
     try {
       await setDoc(doc(db, "users", user.uid), {
@@ -136,32 +131,18 @@ export function useCarbonIQ() {
     } catch (err) {
       console.error("Error saving profile to Firestore:", err);
     }
-  };
+  }, [user]);
 
-  const saveMessages = async (newMessages: Message[]) => {
-    if (!user) return;
-    try {
-      await setDoc(doc(db, "users", user.uid, "configs", "messages"), {
-        messages: newMessages
-      });
-    } catch (err) {
-      console.error("Error saving messages to Firestore:", err);
-    }
-  };
-
-  const triggerToast = (msg: string, type: "success" | "info" = "success") => {
+  const triggerToast = useCallback((msg: string, type: "success" | "info" = "success") => {
     setActiveToast({ message: msg, type });
     setTimeout(() => {
       setActiveToast(null);
     }, 4500);
-  };
+  }, []);
 
-  const registerScanResults = (data: AnalysisResult) => {
+  const registerScanResults = useCallback((data: AnalysisResult) => {
     setScanResult(data);
-    setReceiptsHistory(prev => {
-      const next = [data, ...prev];
-      return next;
-    });
+    setReceiptsHistory(prev => [data, ...prev]);
 
     const newStreak = streakCount + 1;
     const newXP = userXP + 45;
@@ -211,25 +192,24 @@ export function useCarbonIQ() {
     });
 
     setDairyReductionPercent(prev => Math.min(prev + 10, 100));
-  };
+  }, [user, streakCount, userXP, totalCarbonSaved, selectedCityNode, saveProfile, triggerToast, setDairyReductionPercent, setMessages, saveMessages]);
 
-  const fileToBase64 = (file: File): Promise<string> => {
+  const fileToBase64 = useCallback((file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
       reader.onerror = (error) => reject(error);
     });
-  };
+  }, []);
 
-  const handleFileProcessing = async (file: File) => {
+  const handleFileProcessing = useCallback(async (file: File) => {
     setSelectedFile(file);
     setPipelineActive(true);
     setPipelineStep(1);
     setUploadProgress("Scanning image content...");
     
     try {
-      await new Promise(r => setTimeout(r, 400));
       setPipelineStep(2);
       setUploadProgress("Requesting Cloud Storage upload endpoint...");
       
@@ -254,7 +234,6 @@ export function useCarbonIQ() {
         console.warn("Failed to generate signed URL, falling back to base64 inline upload:", err);
       }
 
-      await new Promise(r => setTimeout(r, 400));
       setPipelineStep(3);
       setUploadProgress("Deconstructing receipts with Gemini Vision...");
 
@@ -291,15 +270,10 @@ export function useCarbonIQ() {
         });
       }
       
-      await new Promise(r => setTimeout(r, 300));
       setPipelineStep(4);
       setUploadProgress("Updating Digital Carbon Twin simulation...");
- 
-      await new Promise(r => setTimeout(r, 300));
       setPipelineStep(5);
       setUploadProgress("Synchronizing grid nodes and user balances...");
- 
-      await new Promise(r => setTimeout(r, 200));
  
       if (!scanResponse || !scanResponse.ok) {
         throw new Error("API call error. Switched to fallback.");
@@ -325,31 +299,22 @@ export function useCarbonIQ() {
       setPipelineActive(false);
       setPipelineStep(0);
     }
-  };
+  }, [user, fileToBase64, registerScanResults]);
 
-  const triggerSampleScan = async (sampleId: string) => {
+  const triggerSampleScan = useCallback(async (sampleId: string) => {
     setPipelineActive(true);
     setPipelineStep(1);
     setUploadProgress("Ingesting sample receipt telemetry...");
     
     try {
-      await new Promise(r => setTimeout(r, 300));
       setPipelineStep(2);
       setUploadProgress("Mapping ingredients with Gemini models...");
-      
-      await new Promise(r => setTimeout(r, 300));
       setPipelineStep(3);
       setUploadProgress("Recalculating personal Twin trajectory...");
-      
-      await new Promise(r => setTimeout(r, 300));
       setPipelineStep(4);
       setUploadProgress("Propagating municipal database updates...");
-      
-      await new Promise(r => setTimeout(r, 300));
       setPipelineStep(5);
       setUploadProgress("Structuring real-time advisor logs...");
-      
-      await new Promise(r => setTimeout(r, 200));
  
       const res = await fetch("/api/scan-receipt", {
         method: "POST",
@@ -368,71 +333,9 @@ export function useCarbonIQ() {
       setPipelineActive(false);
       setPipelineStep(0);
     }
-  };
+  }, [registerScanResults]);
 
-  const sendChatMessage = async (textToSend: string) => {
-    if (!textToSend.trim() || isChatTyping) return;
- 
-    const userMsg: Message = {
-      id: "msg-" + Date.now().toString(),
-      role: "user",
-      content: textToSend,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
- 
-    setMessages(prev => {
-      const next = [...prev, userMsg];
-      saveMessages(next);
-      return next;
-    });
-    setChatInput("");
-    setIsChatTyping(true);
- 
-    try {
-      const chatCopy = [...messages, userMsg];
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          messages: chatCopy,
-          scanHistory: scanResult.items 
-        })
-      });
- 
-      if (!res.ok) {
-        throw new Error("Coach unresponsive.");
-      }
- 
-      const data = await res.json();
-      const modelMsg: Message = {
-        id: "msg-" + (Date.now() + 1).toString(),
-        role: "model",
-        content: data.text,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages(prev => {
-        const next = [...prev, modelMsg];
-        saveMessages(next);
-        return next;
-      });
-    } catch (e) {
-      console.error(e);
-      setMessages(prev => {
-        const next = [...prev, {
-          id: "msg-err-" + Date.now(),
-          role: "model",
-          content: "Network delay. Standard advice: Swapping cows butter for regional wood-pressed oils reduces weekly dairy fat indexes by **78%** instantly. Let me know if you would like me to lock this simulation lever in.",
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }];
-        saveMessages(next);
-        return next;
-      });
-    } finally {
-      setIsChatTyping(false);
-    }
-  };
-
-  const handleToggleMissionCommit = (id: string) => {
+  const handleToggleMissionCommit = useCallback((id: string) => {
     setWeeklyMissions(prev => prev.map(m => {
       if (m.id === id) {
         const nextCommit = !m.isCommit;
@@ -459,7 +362,7 @@ export function useCarbonIQ() {
       }
       return m;
     }));
-  };
+  }, [streakCount, userXP, totalCarbonSaved, selectedCityNode, saveProfile, triggerToast, altAdoptionPercent, setAltAdoptionPercent, setUserXP]);
 
   return {
     activeTab,

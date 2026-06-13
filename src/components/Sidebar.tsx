@@ -11,7 +11,7 @@ interface SidebarProps {
   triggerToast: (msg: string, type?: "success" | "info") => void;
 }
 
-export function Sidebar({
+export const Sidebar = React.memo(function Sidebar({
   activeTab,
   setActiveTab,
   selectedCityNode,
@@ -171,4 +171,4 @@ export function Sidebar({
       </div>
     </aside>
   );
-}
+});

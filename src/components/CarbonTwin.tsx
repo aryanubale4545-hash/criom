@@ -13,7 +13,7 @@ interface CarbonTwinProps {
   triggerToast: (msg: string, type?: "success" | "info") => void;
 }
 
-export function CarbonTwin({
+export const CarbonTwin = React.memo(function CarbonTwin({
   dairyReductionPercent,
   setDairyReductionPercent,
   altAdoptionPercent,
@@ -235,4 +235,4 @@ export function CarbonTwin({
       </div>
     </motion.div>
   );
-}
+});

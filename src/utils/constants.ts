@@ -38,8 +38,8 @@ export const INITIAL_CITIES_DATA: CityData[] = [
 ];
 
 export const INITIAL_WEEKLY_MISSIONS = [
-  { id: "m1", title: "Substitute Dairy Butter for plant fat", co2Saving: 2.4, monetorySaving: 40, status: "available", isCommit: false },
-  { id: "m2", title: "Reduce home dairy volume by 10%", co2Saving: 3.5, monetorySaving: 120, status: "active", isCommit: true },
-  { id: "m3", title: "Complete 3 low-carbon grocery trips", co2Saving: 1.8, monetorySaving: 60, status: "available", isCommit: false },
-  { id: "m4", title: "Switch Basmati rice with Finger Millets", co2Saving: 1.2, monetorySaving: 30, status: "completed", isCommit: false }
+  { id: "m1", title: "Substitute Dairy Butter for plant fat", co2Saving: 2.4, monetarySaving: 40, status: "available", isCommit: false },
+  { id: "m2", title: "Reduce home dairy volume by 10%", co2Saving: 3.5, monetarySaving: 120, status: "active", isCommit: true },
+  { id: "m3", title: "Complete 3 low-carbon grocery trips", co2Saving: 1.8, monetarySaving: 60, status: "available", isCommit: false },
+  { id: "m4", title: "Switch Basmati rice with Finger Millets", co2Saving: 1.2, monetarySaving: 30, status: "completed", isCommit: false }
 ];

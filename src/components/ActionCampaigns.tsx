@@ -6,7 +6,7 @@ interface Mission {
   id: string;
   title: string;
   co2Saving: number;
-  monetorySaving: number;
+  monetarySaving: number;
   status: string;
   isCommit: boolean;
 }
@@ -22,7 +22,7 @@ interface ActionCampaignsProps {
   setActiveTab: (tab: "workspace" | "twin" | "coach" | "network" | "actions") => void;
 }
 
-export function ActionCampaigns({
+export const ActionCampaigns = React.memo(function ActionCampaigns({
   weeklyMissions,
   handleToggleMissionCommit,
   totalCarbonSaved,
@@ -102,7 +102,7 @@ export function ActionCampaigns({
                 </div>
                 <div className="flex gap-4 text-[9px] font-mono text-zinc-500 pl-4 leading-none">
                   <span>CO₂ Impact: <strong className="text-emerald-400">-{mission.co2Saving}kg</strong></span>
-                  <span>Economic Delta: <strong className="text-zinc-300">₹{mission.monetorySaving} Saved</strong></span>
+                  <span>Economic Delta: <strong className="text-zinc-300">₹{mission.monetarySaving} Saved</strong></span>
                 </div>
               </div>
 
@@ -153,4 +153,4 @@ export function ActionCampaigns({
       </div>
     </motion.div>
   );
-}
+});

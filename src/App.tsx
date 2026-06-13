@@ -1,13 +1,27 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronRight, Database, CheckCircle } from "lucide-react";
+import { ChevronRight, Database, CheckCircle, Loader2 } from "lucide-react";
 import { useCarbonIQ } from "./hooks/useCarbonIQ";
 import { Sidebar } from "./components/Sidebar";
 import { WorkspaceScanner } from "./components/WorkspaceScanner";
-import { CarbonTwin } from "./components/CarbonTwin";
-import { AICoach } from "./components/AICoach";
-import { MunicipalNetwork } from "./components/MunicipalNetwork";
-import { ActionCampaigns } from "./components/ActionCampaigns";
+import { CarbonTwin as CarbonTwinStatic } from "./components/CarbonTwin";
+import { AICoach as AICoachStatic } from "./components/AICoach";
+import { MunicipalNetwork as MunicipalNetworkStatic } from "./components/MunicipalNetwork";
+import { ActionCampaigns as ActionCampaignsStatic } from "./components/ActionCampaigns";
+
+const isTest = typeof process !== "undefined" && process.env.NODE_ENV === "test";
+
+const CarbonTwin = isTest ? CarbonTwinStatic : React.lazy(() => import("./components/CarbonTwin").then(m => ({ default: m.CarbonTwin })));
+const AICoach = isTest ? AICoachStatic : React.lazy(() => import("./components/AICoach").then(m => ({ default: m.AICoach })));
+const MunicipalNetwork = isTest ? MunicipalNetworkStatic : React.lazy(() => import("./components/MunicipalNetwork").then(m => ({ default: m.MunicipalNetwork })));
+const ActionCampaigns = isTest ? ActionCampaignsStatic : React.lazy(() => import("./components/ActionCampaigns").then(m => ({ default: m.ActionCampaigns })));
+
+const TabLoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-[300px] w-full text-zinc-500 font-mono text-xs gap-2">
+    <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+    <span>SYNCHRONIZING TRAY NODE...</span>
+  </div>
+);
 
 export default function App() {
   const {
@@ -139,70 +153,72 @@ export default function App() {
           </nav>
 
           <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6" id="carboniq-viewport-scroll" style={{ scrollbarWidth: "thin" }}>
-            <AnimatePresence mode="wait">
-              {activeTab === "workspace" && (
-                <WorkspaceScanner
-                  key="workspace-scanner"
-                  uploadProgress={uploadProgress}
-                  dragActive={dragActive}
-                  setDragActive={setDragActive}
-                  pipelineActive={pipelineActive}
-                  pipelineStep={pipelineStep}
-                  scanResult={scanResult}
-                  receiptsHistory={receiptsHistory}
-                  setScanResult={setScanResult}
-                  handleFileProcessing={handleFileProcessing}
-                  triggerSampleScan={triggerSampleScan}
-                  triggerToast={triggerToast}
-                  setActiveTab={setActiveTab}
-                  selectedCityNode={selectedCityNode}
-                />
-              )}
-              {activeTab === "twin" && (
-                <CarbonTwin
-                  key="carbon-twin"
-                  dairyReductionPercent={dairyReductionPercent}
-                  setDairyReductionPercent={setDairyReductionPercent}
-                  altAdoptionPercent={altAdoptionPercent}
-                  setAltAdoptionPercent={setAltAdoptionPercent}
-                  energyTransitionActive={energyTransitionActive}
-                  setEnergyTransitionActive={setEnergyTransitionActive}
-                  triggerToast={triggerToast}
-                />
-              )}
-              {activeTab === "coach" && (
-                <AICoach
-                  key="ai-coach"
-                  messages={messages}
-                  chatInput={chatInput}
-                  setChatInput={setChatInput}
-                  isChatTyping={isChatTyping}
-                  sendChatMessage={sendChatMessage}
-                />
-              )}
-              {activeTab === "network" && (
-                <MunicipalNetwork
-                  key="municipal-network"
-                  citiesData={citiesData}
-                  selectedCityNode={selectedCityNode}
-                  setSelectedCityNode={setSelectedCityNode}
-                  triggerToast={triggerToast}
-                />
-              )}
-              {activeTab === "actions" && (
-                <ActionCampaigns
-                  key="action-campaigns"
-                  weeklyMissions={weeklyMissions}
-                  handleToggleMissionCommit={handleToggleMissionCommit}
-                  totalCarbonSaved={totalCarbonSaved}
-                  streakCount={streakCount}
-                  userXP={userXP}
-                  setDairyReductionPercent={setDairyReductionPercent}
-                  triggerToast={triggerToast}
-                  setActiveTab={setActiveTab}
-                />
-              )}
-            </AnimatePresence>
+            <Suspense fallback={<TabLoadingFallback />}>
+              <AnimatePresence mode="wait">
+                {activeTab === "workspace" && (
+                  <WorkspaceScanner
+                    key="workspace-scanner"
+                    uploadProgress={uploadProgress}
+                    dragActive={dragActive}
+                    setDragActive={setDragActive}
+                    pipelineActive={pipelineActive}
+                    pipelineStep={pipelineStep}
+                    scanResult={scanResult}
+                    receiptsHistory={receiptsHistory}
+                    setScanResult={setScanResult}
+                    handleFileProcessing={handleFileProcessing}
+                    triggerSampleScan={triggerSampleScan}
+                    triggerToast={triggerToast}
+                    setActiveTab={setActiveTab}
+                    selectedCityNode={selectedCityNode}
+                  />
+                )}
+                {activeTab === "twin" && (
+                  <CarbonTwin
+                    key="carbon-twin"
+                    dairyReductionPercent={dairyReductionPercent}
+                    setDairyReductionPercent={setDairyReductionPercent}
+                    altAdoptionPercent={altAdoptionPercent}
+                    setAltAdoptionPercent={setAltAdoptionPercent}
+                    energyTransitionActive={energyTransitionActive}
+                    setEnergyTransitionActive={setEnergyTransitionActive}
+                    triggerToast={triggerToast}
+                  />
+                )}
+                {activeTab === "coach" && (
+                  <AICoach
+                    key="ai-coach"
+                    messages={messages}
+                    chatInput={chatInput}
+                    setChatInput={setChatInput}
+                    isChatTyping={isChatTyping}
+                    sendChatMessage={sendChatMessage}
+                  />
+                )}
+                {activeTab === "network" && (
+                  <MunicipalNetwork
+                    key="municipal-network"
+                    citiesData={citiesData}
+                    selectedCityNode={selectedCityNode}
+                    setSelectedCityNode={setSelectedCityNode}
+                    triggerToast={triggerToast}
+                  />
+                )}
+                {activeTab === "actions" && (
+                  <ActionCampaigns
+                    key="action-campaigns"
+                    weeklyMissions={weeklyMissions}
+                    handleToggleMissionCommit={handleToggleMissionCommit}
+                    totalCarbonSaved={totalCarbonSaved}
+                    streakCount={streakCount}
+                    userXP={userXP}
+                    setDairyReductionPercent={setDairyReductionPercent}
+                    triggerToast={triggerToast}
+                    setActiveTab={setActiveTab}
+                  />
+                )}
+              </AnimatePresence>
+            </Suspense>
           </div>
 
           <footer className="h-10 border-t border-[#1e2230] bg-[#0b0c10] px-4 md:px-6 flex items-center justify-between text-[9px] text-[#94a3b8]/80 font-mono select-none uppercase tracking-wider shrink-0" id="carboniq-footer">

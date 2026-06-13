@@ -10,7 +10,7 @@ interface MunicipalNetworkProps {
   triggerToast: (msg: string, type?: "success" | "info") => void;
 }
 
-export function MunicipalNetwork({
+export const MunicipalNetwork = React.memo(function MunicipalNetwork({
   citiesData,
   selectedCityNode,
   setSelectedCityNode,
@@ -140,4 +140,4 @@ export function MunicipalNetwork({
       </div>
     </motion.div>
   );
-}
+});

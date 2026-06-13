@@ -11,7 +11,7 @@ interface AICoachProps {
   sendChatMessage: (text: string) => void;
 }
 
-export function AICoach({
+export const AICoach = React.memo(function AICoach({
   messages,
   chatInput,
   setChatInput,
@@ -125,4 +125,4 @@ export function AICoach({
       </div>
     </motion.div>
   );
-}
+});
