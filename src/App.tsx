@@ -4,17 +4,10 @@ import { ChevronRight, Database, CheckCircle, Loader2, X } from "lucide-react";
 import { useCarbonIQ } from "./hooks/useCarbonIQ";
 import { Sidebar } from "./components/Sidebar";
 import { WorkspaceScanner } from "./components/WorkspaceScanner";
-import { CarbonTwin as CarbonTwinStatic } from "./components/CarbonTwin";
-import { AICoach as AICoachStatic } from "./components/AICoach";
-import { MunicipalNetwork as MunicipalNetworkStatic } from "./components/MunicipalNetwork";
-import { ActionCampaigns as ActionCampaignsStatic } from "./components/ActionCampaigns";
-
-const isTest = typeof process !== "undefined" && process.env.NODE_ENV === "test";
-
-const CarbonTwin = isTest ? CarbonTwinStatic : React.lazy(() => import("./components/CarbonTwin").then(m => ({ default: m.CarbonTwin })));
-const AICoach = isTest ? AICoachStatic : React.lazy(() => import("./components/AICoach").then(m => ({ default: m.AICoach })));
-const MunicipalNetwork = isTest ? MunicipalNetworkStatic : React.lazy(() => import("./components/MunicipalNetwork").then(m => ({ default: m.MunicipalNetwork })));
-const ActionCampaigns = isTest ? ActionCampaignsStatic : React.lazy(() => import("./components/ActionCampaigns").then(m => ({ default: m.ActionCampaigns })));
+const CarbonTwin = React.lazy(() => import("./components/CarbonTwin").then(m => ({ default: m.CarbonTwin })));
+const AICoach = React.lazy(() => import("./components/AICoach").then(m => ({ default: m.AICoach })));
+const MunicipalNetwork = React.lazy(() => import("./components/MunicipalNetwork").then(m => ({ default: m.MunicipalNetwork })));
+const ActionCampaigns = React.lazy(() => import("./components/ActionCampaigns").then(m => ({ default: m.ActionCampaigns })));
 
 const TabLoadingFallback = () => (
   <div className="flex items-center justify-center min-h-[300px] w-full text-zinc-500 font-mono text-xs gap-2">

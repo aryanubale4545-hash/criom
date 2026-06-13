@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from '../../App';
 
 // Mock scrollTo and other browser APIs not supported in jsdom
@@ -82,7 +82,7 @@ describe('CarbonIQ Frontend Component & Accessibility (WCAG)', () => {
       expect(scanHeading).toBeInTheDocument();
     });
 
-    it('should transition visible panels elegantly when switching workspace tabs', () => {
+    it('should transition visible panels elegantly when switching workspace tabs', async () => {
       render(<App />);
       
       // Click on Digital Twin navigation segment
@@ -92,8 +92,10 @@ describe('CarbonIQ Frontend Component & Accessibility (WCAG)', () => {
       fireEvent.click(twinTabButton);
       
       // In Twin hub view, sliders and simulation metrics should be visible
-      const twinHeading = screen.getByRole('heading', { name: 'Digital Carbon Twin AI' });
-      expect(twinHeading).toBeInTheDocument();
+      await waitFor(() => {
+        const twinHeading = screen.getByRole('heading', { name: 'Digital Carbon Twin AI' });
+        expect(twinHeading).toBeInTheDocument();
+      });
     });
   });
 

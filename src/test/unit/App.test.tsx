@@ -34,18 +34,24 @@ describe('CarbonIQ App Component Comprehensive Flow Coverage', () => {
     // Switch to Carbon Twin AI
     const twinTab = getByRole('button', { name: 'Carbon Twin AI' });
     fireEvent.click(twinTab);
-    expect(getByText('Digital Carbon Twin AI')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getByText('Digital Carbon Twin AI')).toBeInTheDocument();
+    });
     expect(getByText('Model Levers & Weights')).toBeInTheDocument();
 
     // Switch to AI Advisor Coach
     const coachTab = getByRole('button', { name: 'AI Advisor Coach' });
     fireEvent.click(coachTab);
-    expect(getByText('Gemini Carbon Advisor')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getByText('Gemini Carbon Advisor')).toBeInTheDocument();
+    });
 
     // Switch to Municipal Network
     const networkTab = getByRole('button', { name: 'Municipal Network' });
     fireEvent.click(networkTab);
-    expect(getByText('Metropolitan Carbon Integration Grid')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getByText('Metropolitan Carbon Integration Grid')).toBeInTheDocument();
+    });
 
     // Click on Pune node card to test click handler and state sync
     const puneNode = getAllByText('Pune').find(el => el.tagName === 'SPAN')!;
@@ -56,7 +62,9 @@ describe('CarbonIQ App Component Comprehensive Flow Coverage', () => {
     // Switch to Action Campaigns
     const actionsTab = getByRole('button', { name: 'Action Campaigns' });
     fireEvent.click(actionsTab);
-    expect(getByText('AI Campaign Action Engine')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getByText('AI Campaign Action Engine')).toBeInTheDocument();
+    });
   });
 
   it('should trigger sample scans in the Workspace Scanner Playground', async () => {
@@ -87,11 +95,14 @@ describe('CarbonIQ App Component Comprehensive Flow Coverage', () => {
     }, { timeout: 4500 });
   });
 
-  it('should interact with Carbon Twin AI sliders and options', () => {
-    const { container, getByRole } = render(<App />);
+  it('should interact with Carbon Twin AI sliders and options', async () => {
+    const { container, getByRole, getByText } = render(<App />);
 
     // Go to Carbon Twin AI
     fireEvent.click(getByRole('button', { name: 'Carbon Twin AI' }));
+    await waitFor(() => {
+      expect(getByText('Digital Carbon Twin AI')).toBeInTheDocument();
+    });
 
     // Interact with dairy slider by ID
     const dairySlider = container.querySelector('#dairy-slider') as HTMLInputElement;
@@ -124,6 +135,9 @@ describe('CarbonIQ App Component Comprehensive Flow Coverage', () => {
 
     // Navigate to Coach tab
     fireEvent.click(getByRole('button', { name: 'AI Advisor Coach' }));
+    await waitFor(() => {
+      expect(getByText('Gemini Carbon Advisor')).toBeInTheDocument();
+    });
 
     // Type a chat query
     const input = getByPlaceholderText('Inquire about regional millets, dairy emission locks, or carbon twin contractions...');
@@ -141,10 +155,13 @@ describe('CarbonIQ App Component Comprehensive Flow Coverage', () => {
   });
 
   it('should allow committing to campaigns in Action Campaigns tab', async () => {
-    const { getByRole, getAllByRole, findAllByRole } = render(<App />);
+    const { getByRole, getAllByRole, findAllByRole, getByText } = render(<App />);
 
     // Switch to Action Campaigns tab
     fireEvent.click(getByRole('button', { name: 'Action Campaigns' }));
+    await waitFor(() => {
+      expect(getByText('AI Campaign Action Engine')).toBeInTheDocument();
+    });
 
     // Verify there is a Lock button
     const commitButtons = getAllByRole('button', { name: 'LOCK' });
@@ -158,7 +175,7 @@ describe('CarbonIQ App Component Comprehensive Flow Coverage', () => {
     expect(abortBtns.length).toBe(2);
   });
 
-  it('should switch metropolitan region nodes and display node rankings', () => {
+  it('should switch metropolitan region nodes and display node rankings', async () => {
     const { getByLabelText, getByRole, getAllByText, getByText } = render(<App />);
 
     // Switch node dropdown
@@ -168,6 +185,9 @@ describe('CarbonIQ App Component Comprehensive Flow Coverage', () => {
 
     // Go to Municipal Network tab to verify it displays Pune, Mumbai, Bengaluru averages
     fireEvent.click(getByRole('button', { name: 'Municipal Network' }));
+    await waitFor(() => {
+      expect(getByText('Metropolitan Carbon Integration Grid')).toBeInTheDocument();
+    });
     
     // Check that Mumbai, Pune, Bengaluru nodes are present in the list
     expect(getAllByText('Mumbai').length).toBeGreaterThan(0);
@@ -230,9 +250,12 @@ describe('CarbonIQ App Component Comprehensive Flow Coverage', () => {
     fireEvent.click(swapCard);
   });
 
-  it('should simulate weekly mission twin transition', () => {
-    const { getByRole } = render(<App />);
+  it('should simulate weekly mission twin transition', async () => {
+    const { getByRole, getByText } = render(<App />);
     fireEvent.click(getByRole('button', { name: 'Action Campaigns' }));
+    await waitFor(() => {
+      expect(getByText('AI Campaign Action Engine')).toBeInTheDocument();
+    });
     
     const simButton = getByRole('button', { name: 'Simulate in twin' });
     fireEvent.click(simButton);
@@ -250,6 +273,9 @@ describe('CarbonIQ App Component Comprehensive Flow Coverage', () => {
 
     // Navigate to Coach and send chat message (will hit fetch reject and trigger catch fallback)
     fireEvent.click(getByRole('button', { name: 'AI Advisor Coach' }));
+    await waitFor(() => {
+      expect(getByText('Gemini Carbon Advisor')).toBeInTheDocument();
+    });
     const input = getByPlaceholderText('Inquire about regional millets, dairy emission locks, or carbon twin contractions...');
     fireEvent.change(input, { target: { value: 'Why is it high?' } });
     fireEvent.click(getByRole('button', { name: 'Send' }));
@@ -259,17 +285,23 @@ describe('CarbonIQ App Component Comprehensive Flow Coverage', () => {
     });
   });
 
-  it('should click the sidebar logo and reset tab to workspace', () => {
+  it('should click the sidebar logo and reset tab to workspace', async () => {
     const { getByText, getByRole } = render(<App />);
     fireEvent.click(getByRole('button', { name: 'Carbon Twin AI' }));
+    await waitFor(() => {
+      expect(getByText('Digital Carbon Twin AI')).toBeInTheDocument();
+    });
     const logo = getByText('CarbonIQ');
     fireEvent.click(logo);
     expect(getByText('Invoice Capture Frame')).toBeInTheDocument();
   });
 
-  it('should switch metropolitan region node by clicking a node card in Municipal Network grid', () => {
+  it('should switch metropolitan region node by clicking a node card in Municipal Network grid', async () => {
     const { getByRole, getByText, getAllByText } = render(<App />);
     fireEvent.click(getByRole('button', { name: 'Municipal Network' }));
+    await waitFor(() => {
+      expect(getByText('Metropolitan Carbon Integration Grid')).toBeInTheDocument();
+    });
     const mumbaiCard = getAllByText('Mumbai')[0];
     fireEvent.click(mumbaiCard);
   });
