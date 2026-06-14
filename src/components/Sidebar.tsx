@@ -1,5 +1,6 @@
 import React from "react";
 import { Scan, Sliders, Sparkles, Globe, Target, MapPin, Flame, Zap, Activity } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
 
 interface SidebarProps {
   activeTab: "workspace" | "twin" | "coach" | "network" | "actions";
@@ -20,6 +21,19 @@ export const Sidebar = React.memo(function Sidebar({
   userXP,
   triggerToast,
 }: SidebarProps) {
+  const { user } = useAuth();
+
+  const getInitials = (name: string): string => {
+    if (!name) return "";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 0) return "";
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const displayName = user?.displayName || "Aryan Ubale";
+  const initials = user?.displayName ? getInitials(user.displayName) : "AU";
+
   return (
     <aside className="hidden lg:flex w-64 flex-col bg-[#0b0c10] border-r border-[#1e2230] text-[#f1f5f9] shrink-0 justify-between select-none p-4" id="carboniq-sidebar">
       <div className="space-y-6">
@@ -160,11 +174,11 @@ export const Sidebar = React.memo(function Sidebar({
 
         <div className="flex items-center gap-2.5 p-2 bg-[#12141c]/50 border border-zinc-800/40 rounded-lg">
           <div className="w-8 h-8 rounded bg-gradient-to-tr from-sky-800 to-indigo-800 border border-zinc-700 flex items-center justify-center text-xs font-mono font-extrabold text-white">
-            AU
+            {initials}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex justify-between items-baseline">
-              <span className="text-[11px] font-bold text-zinc-100 truncate block">Aryan Ubale</span>
+              <span className="text-[11px] font-bold text-zinc-100 truncate block">{displayName}</span>
             </div>
             <span className="text-[9px] font-mono text-zinc-500 block truncate">Node Server: Active</span>
           </div>
