@@ -5,7 +5,16 @@ import { db } from "../services/firebase";
 import { Message, ReceiptItem } from "../types";
 import { INITIAL_MESSAGES } from "../utils/constants";
 
-export function useAICoach(user: User | null, scanResultItems: ReceiptItem[]) {
+export function useAICoach(
+  user: User | null, 
+  scanResultItems: ReceiptItem[],
+  twinConfig: {
+    dairyReductionPercent: number;
+    altAdoptionPercent: number;
+    energyTransitionActive: boolean;
+  },
+  city: string
+) {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
   const [chatInput, setChatInput] = useState<string>("");
   const [isChatTyping, setIsChatTyping] = useState<boolean>(false);
@@ -46,7 +55,9 @@ export function useAICoach(user: User | null, scanResultItems: ReceiptItem[]) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           messages: chatCopy,
-          scanHistory: scanResultItems 
+          scanHistory: scanResultItems,
+          twinConfig,
+          city
         })
       });
  
@@ -82,7 +93,7 @@ export function useAICoach(user: User | null, scanResultItems: ReceiptItem[]) {
     } finally {
       setIsChatTyping(false);
     }
-  }, [messages, isChatTyping, scanResultItems, saveMessages]);
+  }, [messages, isChatTyping, scanResultItems, saveMessages, twinConfig, city]);
 
   return {
     messages,

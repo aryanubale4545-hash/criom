@@ -141,11 +141,11 @@ app.post("/api/scan-receipt", async (req, res) => {
 // API Route: AI Carbon Coach Chat
 app.post("/api/chat", async (req, res) => {
   try {
-    const { messages, scanHistory } = req.body;
+    const { messages, scanHistory, twinConfig, city } = req.body;
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "Messages array is required" });
     }
-    const result = await processChat({ messages, scanHistory });
+    const result = await processChat({ messages, scanHistory, twinConfig, city });
     return res.json(result);
   } catch (error: unknown) {
     console.error("Gemini Chat Error:", error);

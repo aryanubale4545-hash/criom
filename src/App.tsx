@@ -47,6 +47,7 @@ export default function App() {
     triggerSampleScan,
     sendChatMessage,
     handleToggleMissionCommit,
+    updateScanResultItem
   } = useCarbonIQ();
 
   return (
@@ -209,6 +210,7 @@ export default function App() {
                     triggerToast={triggerToast}
                     setActiveTab={setActiveTab}
                     selectedCityNode={selectedCityNode}
+                    updateScanResultItem={updateScanResultItem}
                   />
                 )}
                 {activeTab === "twin" && (

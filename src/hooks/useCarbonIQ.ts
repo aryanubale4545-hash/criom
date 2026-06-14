@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { AnalysisResult, Message, CityData, TabKey } from "../types";
+import { AnalysisResult, Message, CityData, TabKey, ReceiptItem } from "../types";
 import { useAuth } from "./useAuth";
 import { useTwinConfig } from "./useTwinConfig";
 import { useAICoach } from "./useAICoach";
@@ -59,7 +59,16 @@ export function useCarbonIQ() {
     isChatTyping,
     sendChatMessage,
     saveMessages
-  } = useAICoach(user, scanResult.items);
+  } = useAICoach(
+    user, 
+    scanResult.items,
+    {
+      dairyReductionPercent,
+      altAdoptionPercent,
+      energyTransitionActive
+    },
+    selectedCityNode
+  );
 
   // 1. Fetch data from Firestore on mount/user change
   useEffect(() => {
@@ -358,6 +367,48 @@ export function useCarbonIQ() {
     }));
   }, [weeklyMissions, streakCount, userXP, totalCarbonSaved, selectedCityNode, saveProfile, triggerToast, altAdoptionPercent, setAltAdoptionPercent, setUserXP]);
 
+  const updateScanResultItem = useCallback((updatedItem: ReceiptItem) => {
+    setScanResult(prev => {
+      const nextItems = prev.items.map(item => item.id === updatedItem.id ? updatedItem : item);
+      const nextTotalCo2 = parseFloat(nextItems.reduce((sum, item) => sum + item.co2, 0).toFixed(2));
+      const nextResult = {
+        ...prev,
+        items: nextItems,
+        totalCo2: nextTotalCo2
+      };
+
+      if (user) {
+        const receiptId = prev.items[0]?.id || "receipt-current";
+        setDoc(doc(db, "users", user.uid, "receipts", receiptId), nextResult)
+          .catch(err => console.error("Error writing updated receipt to Firestore:", err));
+      }
+
+      const oldItem = prev.items.find(item => item.id === updatedItem.id);
+      if (oldItem) {
+        const co2Delta = updatedItem.co2 - oldItem.co2;
+        setTotalCarbonSaved(saved => {
+          const nextSaved = parseFloat((saved - co2Delta).toFixed(2));
+          saveProfile(streakCount, userXP, nextSaved, selectedCityNode);
+          return nextSaved;
+        });
+      }
+
+      return nextResult;
+    });
+
+    setReceiptsHistory(history => history.map(hist => {
+      if (hist.items.some(item => item.id === updatedItem.id)) {
+        const updatedHistItems = hist.items.map(item => item.id === updatedItem.id ? updatedItem : item);
+        return {
+          ...hist,
+          items: updatedHistItems,
+          totalCo2: parseFloat(updatedHistItems.reduce((s, it) => s + it.co2, 0).toFixed(2))
+        };
+      }
+      return hist;
+    }));
+  }, [user, streakCount, userXP, selectedCityNode, saveProfile]);
+
   return {
     activeTab,
     setActiveTab,
@@ -393,6 +444,7 @@ export function useCarbonIQ() {
     handleFileProcessing,
     triggerSampleScan,
     sendChatMessage,
-    handleToggleMissionCommit
+    handleToggleMissionCommit,
+    updateScanResultItem
   };
 }

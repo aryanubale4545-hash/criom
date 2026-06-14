@@ -213,7 +213,21 @@ Return an accurate, structured JSON object representation matching this format e
   return parsedResponse;
 }
 
-export async function processChat({ messages, scanHistory }: { messages: Message[]; scanHistory?: ReceiptItem[] }) {
+export async function processChat({ 
+  messages, 
+  scanHistory,
+  twinConfig,
+  city
+}: { 
+  messages: Message[]; 
+  scanHistory?: ReceiptItem[];
+  twinConfig?: {
+    dairyReductionPercent: number;
+    altAdoptionPercent: number;
+    energyTransitionActive: boolean;
+  };
+  city?: string;
+}) {
   if (!messages || !Array.isArray(messages)) {
     throw new Error("Messages array is required");
   }
@@ -245,6 +259,11 @@ export async function processChat({ messages, scanHistory }: { messages: Message
     historyDesc = scanHistory.map(item => `- ${item.name}: ${item.co2}kg CO2 (Category: ${item.category}, Alternative: ${item.alternative})`).join("\n");
   }
 
+  const twinDesc = twinConfig
+    ? `The user's current Digital Carbon Twin parameters are: Dairy Contraction: ${twinConfig.dairyReductionPercent}%, Alternative Food Adoption: ${twinConfig.altAdoptionPercent}%, Clean Energy Transition: ${twinConfig.energyTransitionActive ? "Active" : "Inactive"}.`
+    : "No digital twin settings configured yet.";
+  const cityDesc = city ? `The user is currently auditing their carbon budget against the ${city} Municipal Node.` : "";
+
   if (!ai) {
     let reply = "Hello! I am your CarbonIQ Carbon Coach. I provide deep insights into India's greenhouse emission factors and help you align your personal carbon budgets. How can I assist today?";
 
@@ -252,7 +271,15 @@ export async function processChat({ messages, scanHistory }: { messages: Message
     const hasPaneer = lowerMsg.includes("paneer") || (scanHistory && scanHistory.some(i => i.name.toLowerCase().includes("paneer")));
     const hasButter = lowerMsg.includes("butter") || (scanHistory && scanHistory.some(i => i.name.toLowerCase().includes("butter")));
 
-    if (lowerMsg.includes("increasing") || lowerMsg.includes("why") || lowerMsg.includes("footprint")) {
+    if (lowerMsg.includes("twin") || lowerMsg.includes("setting") || lowerMsg.includes("lever") || lowerMsg.includes("parameter")) {
+      const activeCity = city || "Bengaluru";
+      reply = `Your active **Digital Carbon Twin** configurations are:
+- **Dairy Contraction**: ${twinConfig?.dairyReductionPercent ?? 0}%
+- **Alternative Food Adoption**: ${twinConfig?.altAdoptionPercent ?? 0}%
+- **Clean Energy Transition**: ${twinConfig?.energyTransitionActive ? "Active" : "Inactive"}
+
+These levers are being tracked against the **${activeCity} Municipal Grid**. Increasing Dairy Contraction or Alternative Food Adoption will dynamically recalibrate your simulated baseline trajectory.`;
+    } else if (lowerMsg.includes("increasing") || lowerMsg.includes("why") || lowerMsg.includes("footprint")) {
       reply = `Analyzing your CarbonIQ dynamic history, here is why your footprint presents this trajectory:
 
 ${scanHistory && scanHistory.length > 0 ? `**Your Scanned Items Carbon Profile:**\n${scanHistory.map(i => `* **${i.name}**: ${i.co2}kg CO₂e`).join('\n')}` : ""}
@@ -320,7 +347,10 @@ CRITICAL USER PROFILE CONTEXT (MEMORY):
 The user's current or last scanned receipt contains the following item log:
 ${historyDesc}
 
-Use this concrete item log to answer user questions with incredible custom memory! (e.g. if their receipt contains ghee, reference it directly when they ask why footprint is high or what to replace!).`
+${twinDesc}
+${cityDesc}
+
+Use this concrete profile and twin context to answer user questions with incredible custom memory! (e.g. if they ask about their twin configuration, reference these settings directly. If they ask how to lower their footprint, suggest actions that align with their digital twin parameters and municipal node benchmarks).`
     }
   });
 

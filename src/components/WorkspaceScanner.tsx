@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { Upload, RefreshCw, CheckCircle, Leaf, Terminal } from "lucide-react";
-import { AnalysisResult } from "../types";
+import { AnalysisResult, ReceiptItem } from "../types";
 import { ScannerPresets } from "./ScannerPresets";
 import { ScannerPipeline } from "./ScannerPipeline";
 
@@ -30,6 +30,7 @@ interface WorkspaceScannerProps {
   triggerToast: (msg: string, type?: "success" | "info") => void;
   setActiveTab: (tab: "workspace" | "twin" | "coach" | "network" | "actions") => void;
   selectedCityNode: string;
+  updateScanResultItem: (item: ReceiptItem) => void;
 }
 
 export const WorkspaceScanner = React.memo(function WorkspaceScanner({
@@ -46,7 +47,43 @@ export const WorkspaceScanner = React.memo(function WorkspaceScanner({
   triggerToast,
   setActiveTab,
   selectedCityNode,
+  updateScanResultItem,
 }: WorkspaceScannerProps) {
+  // Inline edit states
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [editName, setEditName] = React.useState<string>("");
+  const [editQuantity, setEditQuantity] = React.useState<string>("");
+  const [editCategory, setEditCategory] = React.useState<string>("");
+  const [editEcoRating, setEditEcoRating] = React.useState<"A" | "B" | "C" | "D" | "E">("A");
+  const [editCo2, setEditCo2] = React.useState<number>(0);
+
+  const startEditing = (item: ReceiptItem) => {
+    setEditingId(item.id);
+    setEditName(item.name);
+    setEditQuantity(item.quantity);
+    setEditCategory(item.category);
+    setEditEcoRating(item.ecoRating);
+    setEditCo2(item.co2);
+  };
+
+  const saveEditing = (item: ReceiptItem) => {
+    if (!editName.trim()) {
+      triggerToast("Name cannot be empty", "info");
+      return;
+    }
+    const updated: ReceiptItem = {
+      ...item,
+      name: editName.trim(),
+      quantity: editQuantity.trim(),
+      category: editCategory.trim(),
+      ecoRating: editEcoRating,
+      co2: editCo2
+    };
+    updateScanResultItem(updated);
+    setEditingId(null);
+    triggerToast("Item updated successfully", "success");
+  };
+
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -190,22 +227,116 @@ export const WorkspaceScanner = React.memo(function WorkspaceScanner({
                       <th className="py-2.5 font-bold text-center">Category Node</th>
                       <th className="py-2.5 font-bold text-center">Eco Multiplier</th>
                       <th className="py-2.5 font-bold text-right">Methane Weight</th>
+                      <th className="py-2.5 font-bold text-center w-24">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#1e2230]/40 text-xs">
-                    {scanResult.items.map((item) => (
-                      <tr key={item.id} className="hover:bg-white/[0.008] transition-colors">
-                        <td className="py-3 font-semibold text-zinc-100 font-sans text-sm">{item.name}</td>
-                        <td className="py-3 text-center text-zinc-400 font-mono text-xs">{item.quantity}</td>
-                        <td className="py-3 text-center">
-                          <span className="text-[9px] font-mono font-bold bg-[#1e2230] text-zinc-300 border border-zinc-700 px-2 py-0.5 rounded uppercase">{item.category}</span>
-                        </td>
-                        <td className="py-3 text-center">
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded font-mono ${getEcoColor(item.ecoRating)}`}>{item.ecoRating}</span>
-                        </td>
-                        <td className="py-3 text-right font-mono font-black text-emerald-400 text-sm">{item.co2.toFixed(1)}kg</td>
-                      </tr>
-                    ))}
+                    {scanResult.items.map((item) => {
+                      const isEditing = editingId === item.id;
+                      return (
+                        <tr key={item.id} className="hover:bg-white/[0.008] transition-colors">
+                          {isEditing ? (
+                            <>
+                              <td className="py-2">
+                                <input
+                                  type="text"
+                                  value={editName}
+                                  onChange={(e) => setEditName(e.target.value)}
+                                  className="bg-[#0c0d12] border border-zinc-800 text-zinc-100 rounded px-2 py-1 text-xs focus:outline-none focus:border-emerald-500/50 w-full font-sans"
+                                  placeholder="Element Name"
+                                  id={`edit-name-${item.id}`}
+                                />
+                              </td>
+                              <td className="py-2 text-center">
+                                <input
+                                  type="text"
+                                  value={editQuantity}
+                                  onChange={(e) => setEditQuantity(e.target.value)}
+                                  className="bg-[#0c0d12] border border-zinc-800 text-zinc-100 rounded px-2 py-1 text-xs text-center focus:outline-none focus:border-emerald-500/50 w-20 mx-auto font-mono"
+                                  placeholder="Quantity"
+                                  id={`edit-quantity-${item.id}`}
+                                />
+                              </td>
+                              <td className="py-2 text-center">
+                                <select
+                                  value={editCategory}
+                                  onChange={(e) => setEditCategory(e.target.value)}
+                                  className="bg-[#0c0d12] border border-zinc-850 text-zinc-200 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-emerald-500/50 w-24 mx-auto font-mono uppercase"
+                                  id={`edit-category-${item.id}`}
+                                >
+                                  {["Dairy", "Produce", "Bakery", "Dessert/Beverage", "Grains", "Fats", "Meat", "Other"].map((cat) => (
+                                    <option key={cat} value={cat} className="bg-[#0c0d12]">{cat}</option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td className="py-2 text-center">
+                                <select
+                                  value={editEcoRating}
+                                  onChange={(e) => setEditEcoRating(e.target.value as any)}
+                                  className="bg-[#0c0d12] border border-zinc-850 text-zinc-200 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-emerald-500/50 w-14 mx-auto font-mono font-bold"
+                                  id={`edit-ecorating-${item.id}`}
+                                >
+                                  {["A", "B", "C", "D", "E"].map((rate) => (
+                                    <option key={rate} value={rate} className="bg-[#0c0d12]">{rate}</option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td className="py-2 text-right">
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  min="0"
+                                  value={editCo2}
+                                  onChange={(e) => setEditCo2(parseFloat(e.target.value) || 0)}
+                                  className="bg-[#0c0d12] border border-zinc-800 text-zinc-100 rounded px-2 py-1 text-xs text-right focus:outline-none focus:border-emerald-500/50 w-16 ml-auto font-mono font-bold text-emerald-400"
+                                  placeholder="CO2"
+                                  id={`edit-co2-${item.id}`}
+                                />
+                              </td>
+                              <td className="py-2 text-center">
+                                <div className="flex justify-center gap-1">
+                                  <button
+                                    onClick={() => saveEditing(item)}
+                                    className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-mono transition-colors font-bold cursor-pointer"
+                                    id={`save-btn-${item.id}`}
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingId(null)}
+                                    className="px-2 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-[10px] font-mono transition-colors cursor-pointer"
+                                    id={`cancel-btn-${item.id}`}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="py-3 font-semibold text-zinc-100 font-sans text-sm">{item.name}</td>
+                              <td className="py-3 text-center text-zinc-400 font-mono text-xs">{item.quantity}</td>
+                              <td className="py-3 text-center">
+                                <span className="text-[9px] font-mono font-bold bg-[#1e2230] text-zinc-300 border border-zinc-700 px-2 py-0.5 rounded uppercase">{item.category}</span>
+                              </td>
+                              <td className="py-3 text-center">
+                                <span className={`text-[10px] font-black px-2 py-0.5 rounded font-mono ${getEcoColor(item.ecoRating)}`}>{item.ecoRating}</span>
+                              </td>
+                              <td className="py-3 text-right font-mono font-black text-emerald-400 text-sm">{item.co2.toFixed(1)}kg</td>
+                              <td className="py-3 text-center">
+                                <button
+                                  onClick={() => startEditing(item)}
+                                  className="px-2.5 py-0.5 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 text-zinc-300 rounded text-[10px] font-mono transition-all cursor-pointer"
+                                  id={`edit-btn-${item.id}`}
+                                >
+                                  Edit
+                                </button>
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -260,6 +391,157 @@ export const WorkspaceScanner = React.memo(function WorkspaceScanner({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Carbon Trend Analytics Dashboard */}
+        <div className="bg-[#11131a] p-5 rounded-xl border border-[#1e2230] space-y-4" id="carbon-trend-dashboard">
+          <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
+            <div className="space-y-0.5">
+              <span className="text-[#10b981] text-[9px] font-mono tracking-widest uppercase font-black block">Grid Telemetry</span>
+              <h3 className="text-sm font-sans font-black tracking-tight text-white leading-none">Carbon Trend Analytics</h3>
+            </div>
+            <div className="flex items-center gap-4 text-[10px] font-mono text-zinc-400">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>Personal Footprint (kg CO₂e)</span>
+              </div>
+            </div>
+          </div>
+
+          {(() => {
+            const trendHistory = [...receiptsHistory].slice(0, 8).reverse();
+            const svgWidth = 500;
+            const svgHeight = 160;
+            const paddingLeft = 40;
+            const paddingRight = 20;
+            const paddingTop = 20;
+            const paddingBottom = 30;
+            const maxCo2 = Math.max(...trendHistory.map(d => d.totalCo2), 6);
+            const minCo2 = 0;
+            const chartWidth = svgWidth - paddingLeft - paddingRight;
+            const chartHeight = svgHeight - paddingTop - paddingBottom;
+            const points = trendHistory.map((item, index) => {
+              const x = paddingLeft + (trendHistory.length > 1 ? (index / (trendHistory.length - 1)) * chartWidth : chartWidth / 2);
+              const y = svgHeight - paddingBottom - ((item.totalCo2 - minCo2) / (maxCo2 - minCo2)) * chartHeight;
+              return { x, y, item };
+            });
+            let linePath = "";
+            let areaPath = "";
+            if (points.length > 0) {
+              linePath = `M ${points[0].x} ${points[0].y} ` + points.slice(1).map(p => `L ${p.x} ${p.y}`).join(" ");
+              areaPath = `${linePath} L ${points[points.length - 1].x} ${svgHeight - paddingBottom} L ${points[0].x} ${svgHeight - paddingBottom} Z`;
+            }
+            const gridLevels = [0, 0.33, 0.66, 1.0];
+
+            return trendHistory.length === 0 ? (
+              <div className="h-[160px] flex items-center justify-center text-xs font-mono text-zinc-500 bg-[#0c0d12] rounded-lg border border-zinc-855">
+                No telemetry logs parsed on this session.
+              </div>
+            ) : (
+              <div className="bg-[#0c0d12] p-3 rounded-lg border border-zinc-855 relative">
+                <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto" aria-label="Carbon footprint trend line chart">
+                  <defs>
+                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity="0.00" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Grid Lines & Labels */}
+                  {gridLevels.map((lvl, idx) => {
+                    const val = minCo2 + lvl * (maxCo2 - minCo2);
+                    const y = svgHeight - paddingBottom - lvl * chartHeight;
+                    return (
+                      <g key={`grid-${idx}`}>
+                        <line 
+                          x1={paddingLeft} 
+                          y1={y} 
+                          x2={svgWidth - paddingRight} 
+                          y2={y} 
+                          stroke="#1e2230" 
+                          strokeDasharray="4 4" 
+                        />
+                        <text 
+                          x={paddingLeft - 8} 
+                          y={y + 3} 
+                          fill="#64748b" 
+                          fontSize="8" 
+                          fontFamily="monospace"
+                          textAnchor="end"
+                        >
+                          {val.toFixed(1)}
+                        </text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Chart Paths */}
+                  {points.length > 1 && (
+                    <>
+                      <path 
+                        d={areaPath} 
+                        fill="url(#chartGradient)" 
+                      />
+                      <path 
+                        d={linePath} 
+                        fill="none" 
+                        stroke="#10b981" 
+                        strokeWidth="2.5" 
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </>
+                  )}
+
+                  {/* Data Points */}
+                  {points.map((p, idx) => (
+                    <g key={`point-${idx}`} className="group cursor-pointer">
+                      <circle 
+                        cx={p.x} 
+                        cy={p.y} 
+                        r="3.5" 
+                        fill="#0d0e12" 
+                        stroke="#10b981" 
+                        strokeWidth="1.5" 
+                        className="hover:r-5 hover:fill-emerald-400 transition-all duration-155"
+                      />
+                      <text
+                        x={p.x}
+                        y={p.y - 8}
+                        fill="#10b981"
+                        fontSize="8"
+                        fontFamily="monospace"
+                        fontWeight="bold"
+                        textAnchor="middle"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity bg-black duration-155"
+                      >
+                        {p.item.totalCo2.toFixed(1)}
+                      </text>
+                    </g>
+                  ))}
+
+                  {/* X Axis Labels */}
+                  {points.map((p, idx) => {
+                    const name = p.item.items[0]?.name || "Scan";
+                    const labelName = name.length > 10 ? `${name.substring(0, 9)}...` : name;
+                    return (
+                      <text 
+                        key={`label-${idx}`}
+                        x={p.x} 
+                        y={svgHeight - 8} 
+                        fill="#64748b" 
+                        fontSize="8" 
+                        fontFamily="monospace"
+                        textAnchor="middle"
+                      >
+                        {labelName}
+                      </text>
+                    );
+                  })}
+                </svg>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </motion.div>
