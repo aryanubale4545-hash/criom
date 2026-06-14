@@ -30,7 +30,7 @@ async function initializeFirebaseAdmin() {
         if (secretPayload) {
           const sa = JSON.parse(secretPayload);
           if (sa.private_key) {
-            sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+            sa.private_key = sa.private_key.replaceAll('\\n', '\n');
           }
           credential = admin.credential.cert(sa);
         }
@@ -43,7 +43,7 @@ async function initializeFirebaseAdmin() {
     if (!credential && process.env.FIREBASE_SERVICE_ACCOUNT_KEY_JSON) {
       const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY_JSON);
       if (sa.private_key) {
-        sa.private_key = sa.private_key.replace(/\\n/g, '\n');
+        sa.private_key = sa.private_key.replaceAll('\\n', '\n');
       }
       credential = admin.credential.cert(sa);
     }

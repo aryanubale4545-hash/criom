@@ -63,7 +63,7 @@ export const ActionCampaigns = React.memo(function ActionCampaigns({
             <span className="text-[9px] text-zinc-500 font-mono uppercase block">Total carbon saved to date</span>
             <strong className="text-base font-mono text-zinc-100 block truncate">{totalCarbonSaved.toFixed(1)} kg CO₂e</strong>
             <span className="text-[8px] text-zinc-400 font-mono block mt-0.5 truncate">
-              ≈ {Math.round(totalCarbonSaved * 25)} scooter-km | {parseFloat((totalCarbonSaved / 42.5).toFixed(1))} LPG cyl
+              ≈ {Math.round(totalCarbonSaved * 25)} scooter-km | {Number.parseFloat((totalCarbonSaved / 42.5).toFixed(1))} LPG cyl
             </span>
           </div>
         </div>

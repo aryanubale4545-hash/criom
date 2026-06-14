@@ -114,7 +114,7 @@ export async function processReceiptScan({ imageBase64, mimeType, sampleId, rawT
       const totalCo2 = items.reduce((sum: number, item: ReceiptItem) => sum + item.co2, 0);
       matchedData = {
         items,
-        totalCo2: parseFloat(totalCo2.toFixed(1)),
+        totalCo2: Number.parseFloat(totalCo2.toFixed(1)),
         explanation: `Analyzed customized carbon indices for your manually entered items. Products categorised as dairy or meat contribute the majority share of carbon footprints. Transitioning to Indian heritage millets, local legumes, and fresh produce substantially lowers your environmental burden.`
       };
     }

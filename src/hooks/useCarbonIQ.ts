@@ -173,7 +173,7 @@ export function useCarbonIQ() {
     setCitiesData(prev => prev.map(city => {
       if (city.name.toLowerCase() === selectedCityNode.toLowerCase() || 
           (selectedCityNode === "Bengaluru" && city.name === "Bengaluru")) {
-        const newAvg = parseFloat(((city.avgCo2 * 49 + data.totalCo2) / 50).toFixed(2));
+        const newAvg = Number.parseFloat(((city.avgCo2 * 49 + data.totalCo2) / 50).toFixed(2));
         return {
           ...city,
           avgCo2: newAvg,
@@ -208,7 +208,7 @@ export function useCarbonIQ() {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
+      reader.onerror = () => reject(new Error(reader.error?.message || "FileReader failed to read file"));
     });
   }, []);
 
@@ -370,7 +370,7 @@ export function useCarbonIQ() {
   const updateScanResultItem = useCallback((updatedItem: ReceiptItem) => {
     setScanResult(prev => {
       const nextItems = prev.items.map(item => item.id === updatedItem.id ? updatedItem : item);
-      const nextTotalCo2 = parseFloat(nextItems.reduce((sum, item) => sum + item.co2, 0).toFixed(2));
+      const nextTotalCo2 = Number.parseFloat(nextItems.reduce((sum, item) => sum + item.co2, 0).toFixed(2));
       const nextResult = {
         ...prev,
         items: nextItems,
@@ -387,7 +387,7 @@ export function useCarbonIQ() {
       if (oldItem) {
         const co2Delta = updatedItem.co2 - oldItem.co2;
         setTotalCarbonSaved(saved => {
-          const nextSaved = parseFloat((saved - co2Delta).toFixed(2));
+          const nextSaved = Number.parseFloat((saved - co2Delta).toFixed(2));
           saveProfile(streakCount, userXP, nextSaved, selectedCityNode);
           return nextSaved;
         });
@@ -402,7 +402,7 @@ export function useCarbonIQ() {
         return {
           ...hist,
           items: updatedHistItems,
-          totalCo2: parseFloat(updatedHistItems.reduce((s, it) => s + it.co2, 0).toFixed(2))
+          totalCo2: Number.parseFloat(updatedHistItems.reduce((s, it) => s + it.co2, 0).toFixed(2))
         };
       }
       return hist;

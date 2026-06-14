@@ -37,7 +37,18 @@ export const Sidebar = React.memo(function Sidebar({
   return (
     <aside className="hidden lg:flex w-64 flex-col bg-[#0b0c10] border-r border-[#1e2230] text-[#f1f5f9] shrink-0 justify-between select-none p-4" id="carboniq-sidebar">
       <div className="space-y-6">
-        <div className="flex items-center gap-2.5 px-2 py-1 cursor-pointer" onClick={() => setActiveTab("workspace")}>
+        <div 
+          className="flex items-center gap-2.5 px-2 py-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500/50 rounded" 
+          onClick={() => setActiveTab("workspace")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setActiveTab("workspace");
+            }
+          }}
+          role="button"
+          tabIndex={0}
+        >
           <div className="relative flex h-5 w-5 shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-65"></span>
             <span className="relative inline-flex rounded h-5 w-5 bg-gradient-to-tr from-[#10b981] to-[#3b82f6] shadow shadow-[#10b981]/50"></span>

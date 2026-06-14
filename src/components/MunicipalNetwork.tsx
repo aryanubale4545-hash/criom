@@ -46,7 +46,16 @@ export const MunicipalNetwork = React.memo(function MunicipalNetwork({
                 setSelectedCityNode(city.name);
                 triggerToast(`Focused grid benchmarks on ${city.name} cluster`, "info");
               }}
-              className={`p-5 rounded-lg border transition-all duration-300 flex flex-col justify-between space-y-4 cursor-pointer group ${
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelectedCityNode(city.name);
+                  triggerToast(`Focused grid benchmarks on ${city.name} cluster`, "info");
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              className={`p-5 rounded-lg border transition-all duration-300 flex flex-col justify-between space-y-4 cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500/50 group ${
                 isCitySelectedNode 
                   ? "bg-[#131621] border-[#10b981]/50 shadow shadow-[#10b981]/5" 
                   : "bg-[#11131a] border-zinc-800 hover:border-zinc-700"

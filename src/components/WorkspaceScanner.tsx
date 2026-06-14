@@ -190,7 +190,16 @@ export const WorkspaceScanner = React.memo(function WorkspaceScanner({
                       setScanResult(hist);
                       triggerToast(`Loaded cached ledger run worth ${hist.totalCo2}kg CO₂e`, "info");
                     }}
-                    className="flex items-center justify-between text-[11px] p-2 bg-[#0c0d12] border border-zinc-855 hover:border-zinc-700 rounded cursor-pointer font-mono"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setScanResult(hist);
+                        triggerToast(`Loaded cached ledger run worth ${hist.totalCo2}kg CO₂e`, "info");
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="flex items-center justify-between text-[11px] p-2 bg-[#0c0d12] border border-zinc-855 hover:border-zinc-700 rounded cursor-pointer font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
                   >
                     <span className="text-zinc-400 truncate max-w-[150px]">Run #{receiptsHistory.length - index - 1}: {hist.items[0]?.name || "Parsed Goods"}</span>
                     <span className="font-bold text-emerald-400 text-[10px]">-{hist.totalCo2}kg</span>
@@ -287,7 +296,7 @@ export const WorkspaceScanner = React.memo(function WorkspaceScanner({
                                   step="0.1"
                                   min="0"
                                   value={editCo2}
-                                  onChange={(e) => setEditCo2(parseFloat(e.target.value) || 0)}
+                                  onChange={(e) => setEditCo2(Number.parseFloat(e.target.value) || 0)}
                                   className="bg-[#0c0d12] border border-zinc-800 text-zinc-100 rounded px-2 py-1 text-xs text-right focus:outline-none focus:border-emerald-500/50 w-16 ml-auto font-mono font-bold text-emerald-400"
                                   placeholder="CO2"
                                   id={`edit-co2-${item.id}`}
@@ -351,11 +360,20 @@ export const WorkspaceScanner = React.memo(function WorkspaceScanner({
                   {scanResult.items.filter(it => it.co2 >= 1.0).map((it) => (
                     <div 
                       key={`swap-${it.id}`} 
-                      className="bg-[#0b0c10] p-3 rounded-lg border border-zinc-800 flex flex-col justify-between hover:border-emerald-500/30 transition-all cursor-pointer group"
+                      className="bg-[#0b0c10] p-3 rounded-lg border border-zinc-800 flex flex-col justify-between hover:border-emerald-500/30 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500/30 group"
                       onClick={() => {
                         triggerToast(`Modeling optimized trace for alternative: '${it.alternative}'`, "info");
                         setActiveTab("twin");
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          triggerToast(`Modeling optimized trace for alternative: '${it.alternative}'`, "info");
+                          setActiveTab("twin");
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
                     >
                       <div className="flex justify-between items-start">
                         <span className="text-[9px] text-[#94a3b8] uppercase font-mono block">Replace: {it.name}</span>
@@ -386,7 +404,7 @@ export const WorkspaceScanner = React.memo(function WorkspaceScanner({
                 <span className="text-[9px] text-emerald-400 uppercase tracking-widest font-bold mt-1 mb-1">KILOGRAM EQUIVALENT</span>
                 <span className="text-[8px] text-zinc-400 text-center md:text-right leading-relaxed block">
                   ≈ {Math.round(scanResult.totalCo2 * 25)} scooter-km<br />
-                  ≈ {parseFloat((scanResult.totalCo2 / 42.5).toFixed(2))} LPG cylinder
+                  ≈ {Number.parseFloat((scanResult.totalCo2 / 42.5).toFixed(2))} LPG cylinder
                 </span>
               </div>
             </div>
